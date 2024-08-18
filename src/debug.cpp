@@ -39,6 +39,16 @@ size_t disassembleInstruction(const Chunk& chunk, size_t offset) {
   switch (instruction) {
     case OpCode::kReturn:
       return simpleInstruction("OP_RETURN", offset);
+    case OpCode::kNegate:
+      return simpleInstruction("OP_NEGATE", offset);
+    case OpCode::kAdd:
+      return simpleInstruction("OP_ADD", offset);
+    case OpCode::kSub:
+      return simpleInstruction("OP_SUB", offset);
+    case OpCode::kMul:
+      return simpleInstruction("OP_MUL", offset);
+    case OpCode::kDiv:
+      return simpleInstruction("OP_DIV", offset);
     case OpCode::kConstant:
       return constantInstruction("OP_CONSTANT", chunk, offset);
     default:

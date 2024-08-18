@@ -225,6 +225,30 @@ src/value.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clox.dir/build.make CMakeFiles/clox.dir/src/value.cpp.s
 .PHONY : src/value.cpp.s
 
+src/vm.o: src/vm.cpp.o
+.PHONY : src/vm.o
+
+# target to build an object file
+src/vm.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clox.dir/build.make CMakeFiles/clox.dir/src/vm.cpp.o
+.PHONY : src/vm.cpp.o
+
+src/vm.i: src/vm.cpp.i
+.PHONY : src/vm.i
+
+# target to preprocess a source file
+src/vm.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clox.dir/build.make CMakeFiles/clox.dir/src/vm.cpp.i
+.PHONY : src/vm.cpp.i
+
+src/vm.s: src/vm.cpp.s
+.PHONY : src/vm.s
+
+# target to generate assembly for a file
+src/vm.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clox.dir/build.make CMakeFiles/clox.dir/src/vm.cpp.s
+.PHONY : src/vm.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -246,6 +270,9 @@ help:
 	@echo "... src/value.o"
 	@echo "... src/value.i"
 	@echo "... src/value.s"
+	@echo "... src/vm.o"
+	@echo "... src/vm.i"
+	@echo "... src/vm.s"
 .PHONY : help
 
 

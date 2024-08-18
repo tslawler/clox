@@ -9,6 +9,7 @@
 enum OpCode : uint8_t {
     kReturn,
     kConstant,
+    kNegate, kAdd, kSub, kMul, kDiv,
 };
 
 class Chunk {
@@ -29,6 +30,9 @@ class Chunk {
     }
     const size_t size() const {
       return code_.size();
+    }
+    uint8_t* at(size_t offset) {
+      return &code_[offset];
     }
   private:
     // constants_ contains the constant pool for this chunk.
