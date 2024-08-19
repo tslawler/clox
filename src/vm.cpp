@@ -3,13 +3,14 @@
 #include <stdio.h>
 
 #include "chunk.h"
+#include "compiler.h"
 #include "value.h"
 
 #ifdef DEBUG_TRACE_EXECUTION
 #include "debug.h"
 #endif // DEBUG_TRACE_EXECUTION
 
-
+namespace clox {
 
 VM::VM() {
   stack_top_ = stack_;
@@ -55,8 +56,10 @@ InterpretResult VM::run() {
   }
 }
 
-InterpretResult VM::interpret(Chunk* chunk) {
-  chunk_ = chunk;
-  ip_ = chunk->at(0);
-  return run();
+InterpretResult VM::interpret(const char* source) {
+  compile(source);
+  // return run();
+  return InterpretResult::kOk;
 }
+
+}  // namespace clox

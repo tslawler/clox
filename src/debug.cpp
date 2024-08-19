@@ -7,6 +7,8 @@
 #include "common.h"
 #include "value.h"
 
+namespace clox {
+
 static size_t simpleInstruction(const char* name, size_t offset) {
   printf("%s\n", name);
   return offset + 1;
@@ -56,3 +58,5 @@ size_t disassembleInstruction(const Chunk& chunk, size_t offset) {
       return offset + 1;
   }
 }
+
+}  // namespace clox

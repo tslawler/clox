@@ -6,6 +6,8 @@
 #include "common.h"
 #include "value.h"
 
+namespace clox {
+
 enum OpCode : uint8_t {
     kReturn,
     kConstant,
@@ -46,4 +48,5 @@ class Chunk {
     std::vector<int32_t> lines_;
 };
 
+}  // namespace clox
 #endif  // CLOX_CHUNK_H

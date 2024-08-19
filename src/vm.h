@@ -5,6 +5,8 @@
 
 #define STACK_MAX 256
 
+namespace clox {
+
 enum class InterpretResult {
   kOk,
   kCompileError,
@@ -16,7 +18,7 @@ class VM {
     VM();
     virtual ~VM();
     
-    InterpretResult interpret(Chunk* chunk);
+    InterpretResult interpret(const char* source);
     // Stack manipulation. These are not memory safe!
     void push(Value value);
     Value pop();
@@ -36,4 +38,5 @@ class VM {
     Value* stack_top_;
 };
 
+}  // namespace clox
 #endif  // CLOX_VM_H
