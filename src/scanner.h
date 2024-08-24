@@ -5,26 +5,26 @@
 
 namespace clox {
 
-enum class TokenType {
+enum TokenType {
   // Single-character tokens.
-  kLeftParen, kRightParen,
-  kLeftBrace, kRightBrace,
-  kComma, kDot, kMinus, kPlus,
-  kSemicolon, kSlash, kStar,
+  TOKEN_TYPE_LeftParen, TOKEN_TYPE_RightParen,
+  TOKEN_TYPE_LeftBrace, TOKEN_TYPE_RightBrace,
+  TOKEN_TYPE_Comma, TOKEN_TYPE_Dot, TOKEN_TYPE_Minus, TOKEN_TYPE_Plus,
+  TOKEN_TYPE_Semicolon, TOKEN_TYPE_Slash, TOKEN_TYPE_Star,
   // One or two character tokens.
-  kBang, kBangEqual,
-  kEqual, kEqualEqual,
-  kGreater, kGreaterEqual,
-  kLess, kLessEqual,
+  TOKEN_TYPE_Bang, TOKEN_TYPE_BangEqual,
+  TOKEN_TYPE_Equal, TOKEN_TYPE_EqualEqual,
+  TOKEN_TYPE_Greater, TOKEN_TYPE_GreaterEqual,
+  TOKEN_TYPE_Less, TOKEN_TYPE_LessEqual,
   // Literals.
-  kIdentifier, kString, kNumber,
+  TOKEN_TYPE_Identifier, TOKEN_TYPE_String, TOKEN_TYPE_Number,
   // Keywords.
-  kAnd, kClass, kElse, kFalse,
-  kFor, kFun, kIf, kNil, kOr,
-  kPrint, kReturn, kSuper, kThis,
-  kTrue, kVar, kWhile,
+  TOKEN_TYPE_And, TOKEN_TYPE_Class, TOKEN_TYPE_Else, TOKEN_TYPE_False,
+  TOKEN_TYPE_For, TOKEN_TYPE_Fun, TOKEN_TYPE_If, TOKEN_TYPE_Nil, TOKEN_TYPE_Or,
+  TOKEN_TYPE_Print, TOKEN_TYPE_Return, TOKEN_TYPE_Super, TOKEN_TYPE_This,
+  TOKEN_TYPE_True, TOKEN_TYPE_Var, TOKEN_TYPE_While,
 
-  kError, kEOF
+  TOKEN_TYPE_Error, TOKEN_TYPE_EOF,
 };
 
 struct Token {

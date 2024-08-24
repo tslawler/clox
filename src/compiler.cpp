@@ -1,28 +1,195 @@
 #include "compiler.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
+#include "chunk.h"
 #include "common.h"
 #include "scanner.h"
 
 namespace clox {
 
-void compile(const char* source) {
-  Scanner scanner{source};
-  int line = 0;
-  for (;;) {
-    Token token = scanner.scanToken();
-    if (token.line != line) {
-      printf("%4d ", token.line);
-      line = token.line;
-    } else {
-      printf("   | ");
-    }
+static const ParseRule& getRule(TokenType type) {
+  static ParseRule rules[] {
+    [TOKEN_TYPE_LeftParen] = { .prefix = &Compiler::grouping },
+    [TOKEN_TYPE_RightParen] = {},
+    [TOKEN_TYPE_LeftBrace] = {},
+    [TOKEN_TYPE_RightBrace] = {},
+    [TOKEN_TYPE_Comma] = {},
+    [TOKEN_TYPE_Dot] = {},
+    [TOKEN_TYPE_Minus] = {
+        .prefix = &Compiler::unary,
+        .infix = &Compiler::infixL,
+        .precedence = Precedence::PREC_TERM },
+    [TOKEN_TYPE_Plus] = { 
+        .infix = &Compiler::infixL, 
+        .precedence = Precedence::PREC_TERM },
+    [TOKEN_TYPE_Semicolon] = {},
+    [TOKEN_TYPE_Slash] = {
+        .infix = &Compiler::infixL,
+        .precedence = Precedence::PREC_FACTOR },
+    [TOKEN_TYPE_Star] = {
+        .infix = &Compiler::infixL,
+        .precedence = Precedence::PREC_FACTOR },
+    [TOKEN_TYPE_Bang] = {},
+    [TOKEN_TYPE_BangEqual] = {},
+    [TOKEN_TYPE_Equal] = {},
+    [TOKEN_TYPE_EqualEqual] = {},
+    [TOKEN_TYPE_Greater] = {},
+    [TOKEN_TYPE_GreaterEqual] = {},
+    [TOKEN_TYPE_Less] = {},
+    [TOKEN_TYPE_LessEqual] = {},
+    [TOKEN_TYPE_Identifier] = {},
+    [TOKEN_TYPE_String] = {},
+    [TOKEN_TYPE_Number] = { .prefix = &Compiler::number },
+    [TOKEN_TYPE_And] = {},
+    [TOKEN_TYPE_Class] = {},
+    [TOKEN_TYPE_Else] = {},
+    [TOKEN_TYPE_False] = {},
+    [TOKEN_TYPE_For] = {},
+    [TOKEN_TYPE_Fun] = {},
+    [TOKEN_TYPE_If] = {},
+    [TOKEN_TYPE_Nil] = {},
+    [TOKEN_TYPE_Or] = {},
+    [TOKEN_TYPE_Print] = {},
+    [TOKEN_TYPE_Return] = {},
+    [TOKEN_TYPE_Super] = {},
+    [TOKEN_TYPE_This] = {},
+    [TOKEN_TYPE_True] = {},
+    [TOKEN_TYPE_Var] = {},
+    [TOKEN_TYPE_While] = {},
+    [TOKEN_TYPE_Error] = {},
+    [TOKEN_TYPE_EOF] = {}
+  };
+  return rules[type];
+}
 
-    printf("%2d '%.*s'\n", token.type, token.length, token.start);
-
-    if (token.type == TokenType::kEOF) break;
+Parser::Parser(Scanner& scanner) : scanner_(scanner) {
+  current_ = scanner_.scanToken();
+  previous_ = current_; // just for safety.
+  if (current_.type == TOKEN_TYPE_Error) {
+    errorAtCurrent(current_.start);
   }
+}
+
+void Parser::advance() {
+  previous_ = current_;
+  for (;;) {
+    current_ = scanner_.scanToken();
+    if (current_.type != TOKEN_TYPE_Error) break;
+    errorAtCurrent(current_.start);
+  }
+}
+
+void Parser::errorAt(const Token& token, const char* message) {
+  if (panicMode_) return;
+  erred_ = true;
+  panicMode_ = true;
+  fprintf(stderr, "[line %d] Error", token.line);
+  if (token.type == TOKEN_TYPE_EOF) {
+    fprintf(stderr, " at end");
+  } else if (token.type != TOKEN_TYPE_Error) {
+    fprintf(stderr, " at '%.*s'", (int)token.length, token.start);
+  }
+  fprintf(stderr, ": %s\n", message);
+}
+
+void Parser::consume(TokenType type, const char* message) {
+  if (current_.type == type) {
+    advance();
+    return;
+  }
+  errorAtCurrent(message);
+}
+
+void Compiler::emitByte(uint8_t byte) {
+  currentChunk()->write(byte, parser_.previous().line);
+}
+
+void Compiler::emitReturn() {
+  emitByte(OpCode::kReturn);
+}
+
+void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
+  emitByte(byte1);
+  emitByte(byte2);
+}
+
+uint8_t Compiler::makeConstant(Value value) {
+  size_t index = currentChunk()->addConstant(value);
+  if (index > UINT8_MAX) {
+    error("Too many constants in one chunk.");
+    return 0;
+  }
+  return (uint8_t)index;
+}
+
+void Compiler::emitConstant(Value value) {
+  emitBytes(OpCode::kConstant, makeConstant(value));
+}
+
+void Compiler::number() {
+  double value = strtod(parser_.previous().start, nullptr);
+  emitConstant(value);
+}
+void Compiler::grouping() {
+  expression();
+  parser_.consume(TOKEN_TYPE_RightParen, "Expected ')' after expression.");
+}
+void Compiler::unary() {
+  TokenType operatorType = parser_.previous().type;
+
+  parsePrecedence(Precedence::PREC_UNARY);
+
+  switch (operatorType) {
+    case TOKEN_TYPE_Minus: emitByte(OpCode::kNegate); return;
+    default: return; // Unreachable
+  }
+}
+
+void Compiler::infixL() {
+  TokenType operatorType = parser_.previous().type;
+  const Precedence prec = getRule(operatorType).precedence;
+  parsePrecedence(successor(prec));
+
+  switch (operatorType) {
+    case TOKEN_TYPE_Plus: emitByte(OpCode::kAdd); return;
+    case TOKEN_TYPE_Minus: emitByte(OpCode::kSub); return;
+    case TOKEN_TYPE_Star: emitByte(OpCode::kMul); return;
+    case TOKEN_TYPE_Slash: emitByte(OpCode::kDiv); return;
+    default: return; // Unreachable
+  }
+}
+
+void Compiler::expression() {
+  parsePrecedence(Precedence::PREC_ASSIGN);
+}
+
+void Compiler::parsePrecedence(Precedence prec) {
+  parser_.advance();
+  const auto& rule = getRule(parser_.previous().type);
+  if (rule.prefix == nullptr) {
+    error("Expected expression.");
+    return;
+  }
+  (this->*(rule.prefix))();
+
+  while (prec <= getRule(parser_.current().type).precedence) {
+    parser_.advance();
+    const auto& rule = getRule(parser_.previous().type);
+    if (rule.infix != nullptr) {
+      (this->*(rule.infix))();
+    }
+  }
+}
+
+bool compile(const char* source, Chunk* chunk) {
+  Scanner scanner{source};
+  Parser parser{scanner};
+  Compiler compiler{parser, chunk};
+  compiler.expression();
+  parser.consume(TOKEN_TYPE_EOF, "Expected end of expression.");
+  return !parser.erred();
 }
 
 }  // namespace clox

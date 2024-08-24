@@ -35,14 +35,14 @@ Token Scanner::makeToken(TokenType type) {
   return Token {
     .type = type,
     .start = start_,
-    .length = current_ - start_,
+    .length = static_cast<size_t>(current_ - start_),
     .line = line_
   };
 }
 
 Token Scanner::makeError(const char* error) {
   return Token {
-    .type = TokenType::kError,
+    .type = TOKEN_TYPE_Error,
     .start = error,
     .length = std::strlen(error),
     .line = line_
@@ -52,36 +52,36 @@ Token Scanner::makeError(const char* error) {
 Token Scanner::scanToken() {
   skipWhitespace();
   start_ = current_;
-  if (isAtEnd()) return makeToken(TokenType::kEOF);
+  if (isAtEnd()) return makeToken(TOKEN_TYPE_EOF);
   char c = advance();
 
   if (isDigit(c)) return number();
   if (isValidIdentStart(c)) return identifier();
   switch (c) {
-    case '(': return makeToken(TokenType::kLeftParen);
-    case ')': return makeToken(TokenType::kRightParen);
-    case '{': return makeToken(TokenType::kLeftBrace);
-    case '}': return makeToken(TokenType::kRightBrace);
-    case ',': return makeToken(TokenType::kComma);
-    case '.': return makeToken(TokenType::kDot);
-    case '-': return makeToken(TokenType::kMinus);
-    case '+': return makeToken(TokenType::kPlus);
-    case ';': return makeToken(TokenType::kSemicolon);
-    case '/': return makeToken(TokenType::kSlash);
-    case '*': return makeToken(TokenType::kStar);
+    case '(': return makeToken(TOKEN_TYPE_LeftParen);
+    case ')': return makeToken(TOKEN_TYPE_RightParen);
+    case '{': return makeToken(TOKEN_TYPE_LeftBrace);
+    case '}': return makeToken(TOKEN_TYPE_RightBrace);
+    case ',': return makeToken(TOKEN_TYPE_Comma);
+    case '.': return makeToken(TOKEN_TYPE_Dot);
+    case '-': return makeToken(TOKEN_TYPE_Minus);
+    case '+': return makeToken(TOKEN_TYPE_Plus);
+    case ';': return makeToken(TOKEN_TYPE_Semicolon);
+    case '/': return makeToken(TOKEN_TYPE_Slash);
+    case '*': return makeToken(TOKEN_TYPE_Star);
 
     case '!':
       return makeToken(
-          match('=') ? TokenType::kBangEqual: TokenType::kBang);
+          match('=') ? TOKEN_TYPE_BangEqual: TOKEN_TYPE_Bang);
     case '=':
       return makeToken(
-          match('=') ? TokenType::kEqualEqual: TokenType::kEqual);
+          match('=') ? TOKEN_TYPE_EqualEqual: TOKEN_TYPE_Equal);
     case '<':
       return makeToken(
-          match('=') ? TokenType::kLessEqual: TokenType::kLess);
+          match('=') ? TOKEN_TYPE_LessEqual: TOKEN_TYPE_Less);
     case '>':
       return makeToken(
-          match('=') ? TokenType::kGreaterEqual: TokenType::kGreater);
+          match('=') ? TOKEN_TYPE_GreaterEqual: TOKEN_TYPE_Greater);
     
     case '"': return string();
   }
@@ -128,7 +128,7 @@ Token Scanner::string() {
   }
   // Closing quote
   advance();
-  return makeToken(TokenType::kString);
+  return makeToken(TOKEN_TYPE_String);
 }
 
 Token Scanner::number() {
@@ -139,7 +139,7 @@ Token Scanner::number() {
     while (isDigit(peek())) advance();
   }
 
-  return makeToken(TokenType::kNumber);
+  return makeToken(TOKEN_TYPE_Number);
 }
 
 Token Scanner::identifier() {
@@ -149,30 +149,30 @@ Token Scanner::identifier() {
 
 TokenType Scanner::identifierType() {
   switch (*start_) {
-    case 'a': return checkKeyword(1, 2, "nd", TokenType::kAnd);
-    case 'c': return checkKeyword(1, 4, "lass", TokenType::kClass);
-    case 'e': return checkKeyword(1, 3, "lse", TokenType::kElse);
-    case 'i': return checkKeyword(1, 1, "f", TokenType::kIf);
-    case 'n': return checkKeyword(1, 2, "il", TokenType::kNil);
-    case 'o': return checkKeyword(1, 1, "r", TokenType::kOr);
-    case 'p': return checkKeyword(1, 4, "rint", TokenType::kPrint);
-    case 'r': return checkKeyword(1, 5, "eturn", TokenType::kReturn);
-    case 's': return checkKeyword(1, 4, "uper", TokenType::kSuper);
-    case 'v': return checkKeyword(1, 2, "ar", TokenType::kVar);
-    case 'w': return checkKeyword(1, 4, "hile", TokenType::kWhile);
+    case 'a': return checkKeyword(1, 2, "nd", TOKEN_TYPE_And);
+    case 'c': return checkKeyword(1, 4, "lass", TOKEN_TYPE_Class);
+    case 'e': return checkKeyword(1, 3, "lse", TOKEN_TYPE_Else);
+    case 'i': return checkKeyword(1, 1, "f", TOKEN_TYPE_If);
+    case 'n': return checkKeyword(1, 2, "il", TOKEN_TYPE_Nil);
+    case 'o': return checkKeyword(1, 1, "r", TOKEN_TYPE_Or);
+    case 'p': return checkKeyword(1, 4, "rint", TOKEN_TYPE_Print);
+    case 'r': return checkKeyword(1, 5, "eturn", TOKEN_TYPE_Return);
+    case 's': return checkKeyword(1, 4, "uper", TOKEN_TYPE_Super);
+    case 'v': return checkKeyword(1, 2, "ar", TOKEN_TYPE_Var);
+    case 'w': return checkKeyword(1, 4, "hile", TOKEN_TYPE_While);
     // 2-letter lookahead
     case 'f': switch (start_[1]) {
-      case 'a': return checkKeyword(2, 3, "lse", TokenType::kFalse);
-      case 'o': return checkKeyword(2, 1, "r", TokenType::kFor);
-      case 'u': return checkKeyword(2, 1, "n", TokenType::kFun);
-      default: return TokenType::kIdentifier;
+      case 'a': return checkKeyword(2, 3, "lse", TOKEN_TYPE_False);
+      case 'o': return checkKeyword(2, 1, "r", TOKEN_TYPE_For);
+      case 'u': return checkKeyword(2, 1, "n", TOKEN_TYPE_Fun);
+      default: return TOKEN_TYPE_Identifier;
     }
     case 't': switch (start_[1]) {
-      case 'h': return checkKeyword(2, 2, "is", TokenType::kThis);
-      case 'r': return checkKeyword(2, 2, "ue", TokenType::kTrue);
-      default: return TokenType::kIdentifier;
+      case 'h': return checkKeyword(2, 2, "is", TOKEN_TYPE_This);
+      case 'r': return checkKeyword(2, 2, "ue", TOKEN_TYPE_True);
+      default: return TOKEN_TYPE_Identifier;
     }
-    default: return TokenType::kIdentifier;
+    default: return TOKEN_TYPE_Identifier;
   }
 }
 
@@ -181,7 +181,7 @@ TokenType Scanner::checkKeyword(int start, int len, const char* str, TokenType t
       memcmp(str, start_ + start, len) == 0) {
     return type;
   }
-  return TokenType::kIdentifier;
+  return TOKEN_TYPE_Identifier;
 }
 
 }  // namespace clox

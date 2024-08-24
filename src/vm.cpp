@@ -32,13 +32,15 @@ InterpretResult VM::run() {
   uint8_t instruction;
   for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
-    printf("          ");
-    for (Value* slot = stack_; slot < stack_top_; slot++) {
-      printf("[ ");
-      printValue(*slot);
-      printf(" ]");
+    if (stack_ < stack_top_) { 
+      printf("          ");
+      for (Value* slot = stack_; slot < stack_top_; slot++) {
+        printf("[ ");
+        printValue(*slot);
+        printf(" ]");
+      }
+      printf("\n");
     }
-    printf("\n");
     disassembleInstruction(*chunk_, (ip_ - chunk_->at(0)));
 #endif // DEBUG_TRACE_EXECUTION
     switch (instruction = readByte()) {
@@ -57,9 +59,13 @@ InterpretResult VM::run() {
 }
 
 InterpretResult VM::interpret(const char* source) {
-  compile(source);
-  // return run();
-  return InterpretResult::kOk;
+  Chunk chunk{};
+  if (!compile(source, &chunk)) {
+    return InterpretResult::kCompileError;
+  }
+  chunk_ = &chunk;
+  ip_ = chunk.at(0);
+  return run();
 }
 
 }  // namespace clox
