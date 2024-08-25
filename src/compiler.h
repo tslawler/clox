@@ -20,6 +20,10 @@ enum class Precedence {
   PREC_PRIMARY
 };
 
+inline Precedence successor(Precedence x) {
+  return (Precedence)((int)x + 1);
+}
+
 class Parser {
  public:
   explicit Parser(Scanner& scanner);
@@ -48,10 +52,6 @@ class Parser {
   bool panicMode_ = false;
 };
 
-inline Precedence successor(Precedence x) {
-  return (Precedence)((int)x + 1);
-}
-
 class Compiler {
  public:
   Compiler(Parser& parser, Chunk* chunk)
@@ -66,7 +66,9 @@ class Compiler {
   void emitReturn();
   void emitConstant(Value value);
   uint8_t makeConstant(Value value);
+  // Base parser functions
   void number();
+  void literal();
   void grouping();
   void unary();
   void infixL();

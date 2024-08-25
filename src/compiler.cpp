@@ -6,6 +6,7 @@
 #include "chunk.h"
 #include "common.h"
 #include "scanner.h"
+#include "value.h"
 
 namespace clox {
 
@@ -31,7 +32,7 @@ static const ParseRule& getRule(TokenType type) {
     [TOKEN_TYPE_Star] = {
         .infix = &Compiler::infixL,
         .precedence = Precedence::PREC_FACTOR },
-    [TOKEN_TYPE_Bang] = {},
+    [TOKEN_TYPE_Bang] = { .prefix = &Compiler::unary },
     [TOKEN_TYPE_BangEqual] = {},
     [TOKEN_TYPE_Equal] = {},
     [TOKEN_TYPE_EqualEqual] = {},
@@ -45,17 +46,17 @@ static const ParseRule& getRule(TokenType type) {
     [TOKEN_TYPE_And] = {},
     [TOKEN_TYPE_Class] = {},
     [TOKEN_TYPE_Else] = {},
-    [TOKEN_TYPE_False] = {},
+    [TOKEN_TYPE_False] = { .prefix = &Compiler::literal },
     [TOKEN_TYPE_For] = {},
     [TOKEN_TYPE_Fun] = {},
     [TOKEN_TYPE_If] = {},
-    [TOKEN_TYPE_Nil] = {},
+    [TOKEN_TYPE_Nil] = { .prefix = &Compiler::literal },
     [TOKEN_TYPE_Or] = {},
     [TOKEN_TYPE_Print] = {},
     [TOKEN_TYPE_Return] = {},
     [TOKEN_TYPE_Super] = {},
     [TOKEN_TYPE_This] = {},
-    [TOKEN_TYPE_True] = {},
+    [TOKEN_TYPE_True] = { .prefix = &Compiler::literal },
     [TOKEN_TYPE_Var] = {},
     [TOKEN_TYPE_While] = {},
     [TOKEN_TYPE_Error] = {},
@@ -103,6 +104,9 @@ void Parser::consume(TokenType type, const char* message) {
 }
 
 void Compiler::emitByte(uint8_t byte) {
+#ifdef DEBUG_TRACE_PARSING
+  printf("Emitting %d at line %d\n", byte, parser_.previous().line);
+#endif // DEBUG_TRACE_PARSING
   currentChunk()->write(byte, parser_.previous().line);
 }
 
@@ -130,12 +134,23 @@ void Compiler::emitConstant(Value value) {
 
 void Compiler::number() {
   double value = strtod(parser_.previous().start, nullptr);
-  emitConstant(value);
+  emitConstant(Number(value));
 }
+
+void Compiler::literal() {
+  switch (parser_.previous().type) {
+    case TOKEN_TYPE_True: emitByte(OpCode::kTrue); return;
+    case TOKEN_TYPE_False: emitByte(OpCode::kFalse); return;
+    case TOKEN_TYPE_Nil: emitByte(OpCode::kNil); return;
+    default: return; // Unreachable
+  }
+}
+
 void Compiler::grouping() {
   expression();
   parser_.consume(TOKEN_TYPE_RightParen, "Expected ')' after expression.");
 }
+
 void Compiler::unary() {
   TokenType operatorType = parser_.previous().type;
 
@@ -143,6 +158,7 @@ void Compiler::unary() {
 
   switch (operatorType) {
     case TOKEN_TYPE_Minus: emitByte(OpCode::kNegate); return;
+    case TOKEN_TYPE_Bang: emitByte(OpCode::kNot); return;
     default: return; // Unreachable
   }
 }
@@ -189,6 +205,7 @@ bool compile(const char* source, Chunk* chunk) {
   Compiler compiler{parser, chunk};
   compiler.expression();
   parser.consume(TOKEN_TYPE_EOF, "Expected end of expression.");
+  compiler.emitReturn();
   return !parser.erred();
 }
 

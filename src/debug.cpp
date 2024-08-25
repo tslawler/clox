@@ -53,6 +53,14 @@ size_t disassembleInstruction(const Chunk& chunk, size_t offset) {
       return simpleInstruction("OP_DIV", offset);
     case OpCode::kConstant:
       return constantInstruction("OP_CONSTANT", chunk, offset);
+    case OpCode::kTrue:
+      return simpleInstruction("OP_TRUE", offset);
+    case OpCode::kFalse:
+      return simpleInstruction("OP_FALSE", offset);
+    case OpCode::kNil:
+      return simpleInstruction("OP_NIL", offset);
+    case OpCode::kNot:
+      return simpleInstruction("OP_NOT", offset);
     default:
       printf("Unknown opcode %d\n", instruction);
       return offset + 1;

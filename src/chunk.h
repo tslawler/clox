@@ -12,6 +12,8 @@ enum OpCode : uint8_t {
     kReturn,
     kConstant,
     kNegate, kAdd, kSub, kMul, kDiv,
+    kTrue, kFalse, kNil,
+    kNot,
 };
 
 class Chunk {

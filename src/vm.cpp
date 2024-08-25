@@ -1,19 +1,18 @@
 #include "vm.h"
 
 #include <stdio.h>
+#include <cstdarg>
 
 #include "chunk.h"
+#include "common.h"
 #include "compiler.h"
-#include "value.h"
-
-#ifdef DEBUG_TRACE_EXECUTION
 #include "debug.h"
-#endif // DEBUG_TRACE_EXECUTION
+#include "value.h"
 
 namespace clox {
 
 VM::VM() {
-  stack_top_ = stack_;
+  resetStack();
 }
 
 VM::~VM() {
@@ -21,41 +20,80 @@ VM::~VM() {
 }
 
 void VM::push(Value value) {
-  *stack_top_++ = value;
+  stack_[stack_size_] = value;
+  stack_size_++;
 }
 
 Value VM::pop() {
-  return *--stack_top_;
+  --stack_size_;
+  return stack_[stack_size_];
+}
+
+const Value& VM::peek(ptrdiff_t offset) {
+  return stack_[stack_size_ - offset - 1];
+}
+
+InterpretResult VM::runtimeError(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  va_end(args);
+  fputs("\n", stderr);
+
+  int line = chunk_->lineAt(instr_);
+  fprintf(stderr, "[line %d] in script\n", line);
+  resetStack();
+  return InterpretResult::kRuntimeError;
 }
 
 InterpretResult VM::run() {
+  #define BINOP(valueType, op) \
+      do { \
+        if (!isNumber(peek(0)) || !isNumber(peek(1))) { \
+          return runtimeError("Operands must be numbers."); \
+        } \
+        double a = asNumber(pop()); double b = asNumber(pop()); \
+        push(valueType(b op a)); \
+      } while (false)
+
   uint8_t instruction;
   for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
-    if (stack_ < stack_top_) { 
+    if (stack_size_ > 0) {
       printf("          ");
-      for (Value* slot = stack_; slot < stack_top_; slot++) {
+      for (size_t i = 0; i < stack_size_; ++i) {
         printf("[ ");
-        printValue(*slot);
+        printValue(peek(i));
         printf(" ]");
       }
       printf("\n");
     }
-    disassembleInstruction(*chunk_, (ip_ - chunk_->at(0)));
+    disassembleInstruction(*chunk_, instr_);
 #endif // DEBUG_TRACE_EXECUTION
     switch (instruction = readByte()) {
       case OpCode::kConstant: { push(readConstant()); break; }
-      case OpCode::kNegate: { push(-pop()); break; }
-      case OpCode::kAdd: { Value a = pop(); Value b = pop(); push(b + a); break; }
-      case OpCode::kSub: { Value a = pop(); Value b = pop(); push(b - a); break; }
-      case OpCode::kMul: { Value a = pop(); Value b = pop(); push(b * a); break; }
-      case OpCode::kDiv: { Value a = pop(); Value b = pop(); push(b / a); break; }
+      case OpCode::kTrue: { push(Bool(true)); break; }
+      case OpCode::kFalse: { push(Bool(false)); break; }
+      case OpCode::kNil: { push(Nil()); break; }
+      case OpCode::kNot: { Value a = pop(); push(Bool(!isTruthy(a))); break; }
+      case OpCode::kNegate: { 
+        if (!isNumber(peek(0))) {
+          return runtimeError("Operand must be a number.");
+        } 
+        push(Number(-asNumber(pop())));
+        break;
+      }
+      case OpCode::kAdd: { BINOP(Number, +); break; }
+      case OpCode::kSub: { BINOP(Number, -); break; }
+      case OpCode::kMul: { BINOP(Number, *); break; }
+      case OpCode::kDiv: { BINOP(Number, /); break; }
       case OpCode::kReturn:
         printValue(pop());
         printf("\n");
         return InterpretResult::kOk;
     }
   }
+  #undef BINOP
 }
 
 InterpretResult VM::interpret(const char* source) {
@@ -63,8 +101,12 @@ InterpretResult VM::interpret(const char* source) {
   if (!compile(source, &chunk)) {
     return InterpretResult::kCompileError;
   }
+#ifdef DEBUG_TRACE_PARSING
+  disassembleChunk(chunk, "script");
+  printf("== end script ==\n");
+#endif // DEBUG_TRACE_PARSING
   chunk_ = &chunk;
-  ip_ = chunk.at(0);
+  instr_ = 0;
   return run();
 }
 

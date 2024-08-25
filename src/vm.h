@@ -22,20 +22,24 @@ class VM {
     // Stack manipulation. These are not memory safe!
     void push(Value value);
     Value pop();
+    const Value& peek(ptrdiff_t offset);
   private:
     // Read byte and increment
-    uint8_t readByte() { return *ip_++; }
+    uint8_t readByte() { return chunk_->byteAt(instr_++); }
+    void resetStack() { stack_size_ = 0; }
     Value readConstant() {
       return chunk_->getConstant(readByte());
     }
     // Bulk of the interpreter.
     InterpretResult run();
+    // Prints a runtime error.
+    InterpretResult runtimeError(const char* format, ...);
     Chunk* chunk_;
     // Instruction pointer
-    uint8_t* ip_;
+    size_t instr_;
     // Temporary value stack
     Value stack_[STACK_MAX];
-    Value* stack_top_;
+    size_t stack_size_;
 };
 
 }  // namespace clox
