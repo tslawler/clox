@@ -42,7 +42,7 @@ char* readFile(const char* path) {
 
 void runFile(VM vm, const char* path) {
   char* source = readFile(path);
-  InterpretResult result = vm.interpret(source);
+  InterpretResult result = vm.interpret(path, source);
   free(source); 
 
   if (result == InterpretResult::kCompileError) exit(65);
