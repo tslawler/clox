@@ -84,7 +84,12 @@ InterpretResult VM::run() {
         push(Number(-asNumber(pop())));
         break;
       }
-      case OpCode::kEqual:   { BINOP(Bool, ==); break; }
+      case OpCode::kEqual: { 
+        Value a = pop();
+        Value b = pop();
+        push(Bool(valuesEqual(b,a)));
+        break;
+      }
       case OpCode::kLess:    { BINOP(Bool, <); break; }
       case OpCode::kGreater: { BINOP(Bool, >); break; }
       case OpCode::kAdd: { BINOP(Number, +); break; }

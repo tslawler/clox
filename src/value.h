@@ -35,6 +35,7 @@ inline Value Number(double d) { return Value{.type = ValueType::kNumber, {.numbe
 inline Value Bool(bool b) { return Value{.type = ValueType::kBool, {.boolean = b}}; }
 inline Value Nil() { return Value{.type = ValueType::kNil}; }
 
+bool valuesEqual(Value a, Value b);
 void printValue(Value val);
 
 }  // namespace clox
