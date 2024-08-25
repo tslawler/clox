@@ -2,6 +2,7 @@
 #define CLOX_VM_H
 
 #include "chunk.h"
+#include "opcode.h"
 
 #define STACK_MAX 256
 
@@ -18,7 +19,7 @@ class VM {
     VM();
     virtual ~VM();
     
-    InterpretResult interpret(const char* source);
+    InterpretResult interpret(const char* filename, const char* source);
     // Stack manipulation. These are not memory safe!
     void push(Value value);
     Value pop();

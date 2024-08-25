@@ -21,7 +21,7 @@ void repl(VM vm) {
       break;
     }
 
-    vm.interpret(line);
+    vm.interpret("repl", line);
   }
 }
 

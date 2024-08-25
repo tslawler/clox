@@ -11,6 +11,7 @@ enum OpCode : uint8_t {
     kNegate, kAdd, kSub, kMul, kDiv,
     kTrue, kFalse, kNil,
     kNot,
+    kEqual, kGreater, kLess,
 };
 
 }  // namespace

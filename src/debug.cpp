@@ -5,6 +5,7 @@
 
 #include "chunk.h"
 #include "common.h"
+#include "opcode.h"
 #include "value.h"
 
 namespace clox {
@@ -61,6 +62,12 @@ size_t disassembleInstruction(const Chunk& chunk, size_t offset) {
       return simpleInstruction("OP_NIL", offset);
     case OpCode::kNot:
       return simpleInstruction("OP_NOT", offset);
+    case OpCode::kEqual:
+      return simpleInstruction("OP_EQUAL", offset);
+    case OpCode::kLess:
+      return simpleInstruction("OP_LESS", offset);
+    case OpCode::kGreater:
+      return simpleInstruction("OP_GREATER", offset);
     default:
       printf("Unknown opcode %d\n", instruction);
       return offset + 1;

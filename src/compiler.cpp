@@ -5,6 +5,7 @@
 
 #include "chunk.h"
 #include "common.h"
+#include "opcode.h"
 #include "scanner.h"
 #include "value.h"
 
@@ -33,13 +34,13 @@ static const ParseRule& getRule(TokenType type) {
         .infix = &Compiler::infixL,
         .precedence = Precedence::PREC_FACTOR },
     [TOKEN_TYPE_Bang] = { .prefix = &Compiler::unary },
-    [TOKEN_TYPE_BangEqual] = {},
+    [TOKEN_TYPE_BangEqual] = { .infix = &Compiler::infixL, .precedence = Precedence::PREC_EQUALS },
     [TOKEN_TYPE_Equal] = {},
-    [TOKEN_TYPE_EqualEqual] = {},
-    [TOKEN_TYPE_Greater] = {},
-    [TOKEN_TYPE_GreaterEqual] = {},
-    [TOKEN_TYPE_Less] = {},
-    [TOKEN_TYPE_LessEqual] = {},
+    [TOKEN_TYPE_EqualEqual] = { .infix = &Compiler::infixL, .precedence = Precedence::PREC_EQUALS },
+    [TOKEN_TYPE_Greater] = { .infix = &Compiler::infixL, .precedence = Precedence::PREC_COMPARE },
+    [TOKEN_TYPE_GreaterEqual] = { .infix = &Compiler::infixL, .precedence = Precedence::PREC_COMPARE },
+    [TOKEN_TYPE_Less] = { .infix = &Compiler::infixL, .precedence = Precedence::PREC_COMPARE },
+    [TOKEN_TYPE_LessEqual] = { .infix = &Compiler::infixL, .precedence = Precedence::PREC_COMPARE },
     [TOKEN_TYPE_Identifier] = {},
     [TOKEN_TYPE_String] = {},
     [TOKEN_TYPE_Number] = { .prefix = &Compiler::number },
@@ -173,6 +174,12 @@ void Compiler::infixL() {
     case TOKEN_TYPE_Minus: emitByte(OpCode::kSub); return;
     case TOKEN_TYPE_Star: emitByte(OpCode::kMul); return;
     case TOKEN_TYPE_Slash: emitByte(OpCode::kDiv); return;
+    case TOKEN_TYPE_EqualEqual: emitByte(OpCode::kEqual); return;
+    case TOKEN_TYPE_BangEqual: emitBytes(OpCode::kEqual, OpCode::kNot); return;
+    case TOKEN_TYPE_Less: emitByte(OpCode::kLess); return;
+    case TOKEN_TYPE_GreaterEqual: emitBytes(OpCode::kLess, OpCode::kNot); return;
+    case TOKEN_TYPE_Greater: emitByte(OpCode::kGreater); return;
+    case TOKEN_TYPE_LessEqual: emitBytes(OpCode::kGreater, OpCode::kNot); return;
     default: return; // Unreachable
   }
 }

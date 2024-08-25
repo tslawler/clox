@@ -7,6 +7,7 @@
 #include "common.h"
 #include "compiler.h"
 #include "debug.h"
+#include "opcode.h"
 #include "value.h"
 
 namespace clox {
@@ -83,6 +84,9 @@ InterpretResult VM::run() {
         push(Number(-asNumber(pop())));
         break;
       }
+      case OpCode::kEqual:   { BINOP(Bool, ==); break; }
+      case OpCode::kLess:    { BINOP(Bool, <); break; }
+      case OpCode::kGreater: { BINOP(Bool, >); break; }
       case OpCode::kAdd: { BINOP(Number, +); break; }
       case OpCode::kSub: { BINOP(Number, -); break; }
       case OpCode::kMul: { BINOP(Number, *); break; }
@@ -96,13 +100,13 @@ InterpretResult VM::run() {
   #undef BINOP
 }
 
-InterpretResult VM::interpret(const char* source) {
+InterpretResult VM::interpret(const char* filename, const char* source) {
   Chunk chunk{};
   if (!compile(source, &chunk)) {
     return InterpretResult::kCompileError;
   }
 #ifdef DEBUG_TRACE_PARSING
-  disassembleChunk(chunk, "script");
+  disassembleChunk(chunk, filename);
   printf("== end script ==\n");
 #endif // DEBUG_TRACE_PARSING
   chunk_ = &chunk;
